@@ -1,0 +1,9 @@
+client_name: ecommerce
+
+revenue_per_user: 1200
+incentive_cost: 200
+roi_threshold: 0
+
+security:
+  anomaly_threshold: 0.75
+  max_requests_per_day: 5
