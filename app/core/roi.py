@@ -1,14 +1,18 @@
-def calculate_expected_value(
-    expected_lift: float,
-    revenue: float,
-    incentive_cost: float
-) -> float:
-    """
-    Calculates expected monetary value of an intervention.
+class ROICalculator:
+    def __init__(self, config):
+        self.config = config
 
-    expected_lift: increase in probability of user staying due to action
-    revenue: revenue generated if user stays
-    incentive_cost: cost of retention action (discount, credit, etc.)
-    """
+    def evaluate(self, inputs):
+        churn_prob = inputs.get("churn_probability", 0)
+        expected_lift = inputs.get("expected_lift", 0)
+        revenue = self.config.get("revenue_per_user", 100)
+        cost = self.config.get("incentive_cost", 20)
 
-    return (expected_lift * revenue) - incentive_cost
+        expected_value = (churn_prob * expected_lift * revenue) - cost
+        roi_positive = expected_value > 0
+
+        return {
+            "roi_positive": roi_positive,
+            "expected_value": round(expected_value, 2),
+            "reason": f"Expected value ${expected_value:.2f} — {'ROI positive' if roi_positive else 'not worth intervening'}",
+        }

@@ -1,19 +1,15 @@
-# app/core/security.py
+class SecurityGate:
+    def __init__(self, config):
+        self.anomaly_threshold = config.get("anomaly_threshold", 0.7)
+        self.request_limit = config.get("request_limit", 10)
 
-def is_high_risk(
-    anomaly_score: float,
-    request_count: int,
-    config: dict
-) -> bool:
-    """
-    Determines whether a user is high risk based on behavioral anomalies
-    and request velocity.
-    """
+    def evaluate(self, inputs):
+        anomaly_score = inputs.get("anomaly_score", 0)
+        requests = inputs.get("request_count_today", 0)
 
-    if anomaly_score >= config["security"]["anomaly_threshold"]:
-        return True
-
-    if request_count > config["security"]["max_requests_per_day"]:
-        return True
-
-    return False
+        if anomaly_score > self.anomaly_threshold or requests > self.request_limit:
+            return {
+                "action": "FLAG",
+                "reason": f"Anomaly score {anomaly_score:.2f} or {requests} requests exceeded threshold",
+            }
+        return {"action": "PASS", "reason": "Security checks passed"}

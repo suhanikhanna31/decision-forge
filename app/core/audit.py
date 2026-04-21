@@ -1,17 +1,11 @@
+import json
 from datetime import datetime
 
-
-def log_decision(inputs: dict, decision: dict, config: dict) -> None:
-    """
-    Logs decision details for audit and explainability.
-    """
-
-    log_entry = {
-        "timestamp": datetime.utcnow().isoformat(),
-        "inputs": inputs,
-        "decision": decision,
-        "client": config.get("client_name", "unknown")
-    }
-
-    
-    print(log_entry)
+class AuditLogger:
+    def log(self, inputs, decision):
+        record = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "inputs": inputs,
+            "decision": decision,
+        }
+        print(f"[AUDIT] {json.dumps(record)}")
