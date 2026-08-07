@@ -1,0 +1,4 @@
+revenue_per_user: 100
+incentive_cost: 20
+anomaly_threshold: 0.7
+request_limit: 10
