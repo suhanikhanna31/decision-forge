@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv/
+
+# Django
+auth-service/db.sqlite3
+auth-service/staticfiles/
+
+# Node
+node_modules/
+dist/
+npm-debug.log*
+
+# Env files
+.env
+*.env.local
+
+# OS
+.DS_Store

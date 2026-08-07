@@ -1,0 +1,78 @@
+version: "3.9"
+
+# DecisionForge full-stack architecture:
+#   auth-service   Django + DRF + SimpleJWT   -> users, roles, admin panel  (8001)
+#   ml-service     FastAPI (existing)         -> ML decisions, ROI engine  (8000)
+#   audit-service  Node/Express + MongoDB     -> decision history/stats    (5000)
+#   frontend       React (Vite, served by nginx) -> single UI for all three (3000)
+#
+# All three backends trust the same JWT signing secret (DJANGO_SECRET_KEY),
+# minted by auth-service, so ml-service and audit-service verify tokens
+# locally without calling back into Django.
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  auth-service:
+    build: ./auth-service
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-insecure-secret-key-change-me}
+      DJANGO_DEBUG: "false"
+      DJANGO_ALLOWED_HOSTS: "*"
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+      ML_SERVICE_URL: http://localhost:8000
+      AUDIT_SERVICE_URL: http://localhost:5000
+
+  ml-service:
+    build: ./ml-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-insecure-secret-key-change-me}
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+      AUDIT_SERVICE_URL: http://audit-service:5000
+      INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:-dev-internal-key}
+    depends_on:
+      - audit-service
+
+  audit-service:
+    build: ./audit-service
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      MONGO_URI: mongodb://mongo:27017/decisionforge
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-dev-insecure-secret-key-change-me}
+      INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:-dev-internal-key}
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
+    depends_on:
+      - mongo
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_AUTH_SERVICE_URL: http://localhost:8001
+        VITE_ML_SERVICE_URL: http://localhost:8000
+        VITE_AUDIT_SERVICE_URL: http://localhost:5000
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - auth-service
+      - ml-service
+      - audit-service
+
+volumes:
+  mongo-data:
